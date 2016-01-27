@@ -8,7 +8,7 @@
 
 *As of 11/17/2014, I am updating this README to reflect where the project is now. I hope to have this finished in the next few days.*
 
-This project started life as an implementation of ICollection<T> that persisted itself to a file using JSON seriliazation. That quickly evolved into using Postgres as a JSON store, and then a host of other data stores. What we ended up with is the fastest data tool you can use.
+This project started life as an implementation of ICollection<T> that persisted itself to a file using JSON serialization. That quickly evolved into using Postgres as a JSON store, and then a host of other data stores. What we ended up with is the fastest data tool you can use.
 
 Data is loaded into memory when your application starts, and you query it with Linq. That's it. It loads incredibly fast (100,000 records in about 1 second) and from there will sync your in-memory list with whatever store you choose. 
 
@@ -53,7 +53,7 @@ When Biggy loads the data it deserializes it from the backing store and you can 
 
 ## Complex Documents
 
-Above we saw a couple very simple documents stored as a JSON file. We could just as easily work with a more complex object:
+Above we saw a couple of very simple documents stored as a JSON file. We could just as easily work with a more complex object:
 
 ```csharp
 public class ArtistDocument {
@@ -112,13 +112,13 @@ artists.Update(someArtist);
 ## Relational Database Engines
 If your needs grow beyond storage to a flat JSON file, you can easily use SQLite or Postgres as a backing store for **both document structures and standard relational table data.** 
 
-If we use `pgDocumentStore` or `sqliteDocumentstore`, our objects are serialilzed into JSON and stored in the `body` field of a record. 
+If we use `pgDocumentStore` or `sqliteDocumentstore`, our objects are serialized into JSON and stored in the `body` field of a record. 
 
 if we use `pgRelationalStore` or `sqliteRelationalStore`, data is read/written to the source table as we would expect. 
 
-Our primary relational store of choice is, and has been, Postgresql. Not only is Postgres an amzing database, it has a JSON datatype right out of the box, which lends itself easily to the document storage aspects of Biggy. 
+Our primary relational store of choice is, and has always been, Postgresql. Not only is Postgres an amazing database, it has a JSON datatype right out of the box, which lends itself easily to the document storage aspects of Biggy. 
 
-In between the flat JSON file and a full-blown Posgres install is SQLite. SQLite is a file-based local relational storate option offering some really nice performance characteristics. 
+In between the flat JSON file and a full-blown Posgres install is SQLite. SQLite is a file-based local relational storage option offering some really nice performance characteristics. 
 
 Best part for both, they are FREE, cross-platform, and open source. 
 
@@ -127,7 +127,7 @@ Using SQLite with Biggy is almost as simple as using a flat JSON file:
 
 ```csharp
       // This will create a new SQLite database file named "TestDb.db in ../../Data
-      // if a database file b y that name doesn;t already exist:
+      // if a database file by that name doesn't already exist:
       var store = new sqliteDocumentStore<ArtistDocument>("TestDb");
 
       // This will create a table named artistdocuments in TestDb if one doesn't already exist:
@@ -168,7 +168,7 @@ var artistAlbums = from a in albums
 ## Postgresql
 All of the above works with Postgres as well, except that Postgres, of course, doesn't store files in your project. 
 
-If we want to use Buiggy with a Posgres store, all we need to do is pass it the name of the connection string as defined in the `App.config` or `Web.config` file in our project.
+If we want to use Biggy with a Postgres store, all we need to do is pass it the name of the connection string as defined in the `App.config` or `Web.config` file in our project.
 
 ### Define a connection string in App.config:
 ```xml
@@ -206,7 +206,7 @@ var artistTracks = (from t in tracks
 ```
 ## Cache Schema Info
 
-Of course, the idea behind Biggy is to load data in memory once, and then read/write away as your application needs. The only time Biggy hits the disk is during Writes, which makes things extremely fast (the tripe-joined LINQ query above returns in a less than 5 milliseconds). 
+Of course, the idea behind Biggy is to load data in memory once, and then read/write away as your application needs. The only time Biggy hits the disk is during Writes, which makes things extremely fast (the triple-joined LINQ query above returns in less than 5 milliseconds). 
 
 Biggy works against standard relational tables by reading and caching schema info. Instead of doing this three times like we did above, we can use the DBCore object, and load all that once, during initialization. Then we can inject each store into our separate BiggyLists, and all reference the same schema info:
 
