@@ -4,6 +4,7 @@ using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using Biggy.Core;
 using Biggy.Extensions;
 using Newtonsoft.Json;
@@ -13,23 +14,19 @@ namespace Biggy.Data.Json
 {
     public class JsonStore<T> : IDataStore<T> where T : new()
     {
+        private const bool USE_OPEN_CONTENT_SERIALIZER = false;
 
         public bool KeyIsAutoIncrementing { get; set; }
         public string TableName { get; set; }
-        public string DbDirectory { get { return this.Database.DbDirectory; } set { this.DbDirectory = value; } }
-
-        public string DbFileName
+        public string DbDirectory
         {
-            get { return this.TableName + ".json"; }
+            get { return this.Database.DbDirectory; }
+            set { this.DbDirectory = value; }
         }
 
-        public string DbPath
-        {
-            get
-            {
-                return Path.Combine(DbDirectory, DbFileName);
-            }
-        }
+        public string DbFileName => this.TableName + ".json";
+
+        public string DbPath => Path.Combine(DbDirectory, DbFileName);
 
         // This should never be returned directly to the client, because
         // iteration/modification issues.
@@ -124,7 +121,7 @@ namespace Biggy.Data.Json
 
         protected virtual string DecideTableName()
         {
-            if (String.IsNullOrWhiteSpace(this.TableName))
+            if (string.IsNullOrWhiteSpace(this.TableName))
             {
                 this.TableName = Inflector.Inflector.Pluralize(typeof(T).Name.ToLower());
             }
@@ -380,11 +377,15 @@ namespace Biggy.Data.Json
             List<T> result = new List<T>();
             if (File.Exists(this.DbPath))
             {
+
                 //format for the deserializer...
                 var json = File.ReadAllText(this.DbPath);
-                result = JsonConvert.DeserializeObject<List<T>>(json);
+                if (USE_OPEN_CONTENT_SERIALIZER)
+                    result = json.FromJson<List<T>>();
+                else
+                    result = JsonConvert.DeserializeObject<List<T>>(json);
             }
-            _items = result.ToList();
+            _items = result?.ToList() ?? new List<T>();
             return result;
         }
 
@@ -478,7 +479,7 @@ namespace Biggy.Data.Json
                 if (pkProperty == null)
                 {
                     // Is there a property named TypeNameId (case irrelevant)?
-                    string findName = string.Format("{0}{1}", objectTypeName, "id");
+                    string findName = $"{objectTypeName}{"id"}";
                     pkProperty = myProperties
                       .FirstOrDefault(n => n.Name.Equals(findName, StringComparison.InvariantCultureIgnoreCase));
                 }
@@ -502,14 +503,27 @@ namespace Biggy.Data.Json
             {
                 try
                 {
-                    using (var outstream = new StreamWriter(this.DbPath))
+                    if (USE_OPEN_CONTENT_SERIALIZER)
                     {
-                        var writer = new JsonTextWriter(outstream);
-                        var serializer = JsonSerializer.CreateDefault();
-                        serializer.Serialize(writer, _items);
-                        outstream.Close();
-                        completed = true;
+                        using (var outstream = new StreamWriter(this.DbPath))
+                        {
+                            outstream.WriteLine(_items.ToJson());
+                            outstream.Close();
+                            completed = true;
+                        }
                     }
+                    else
+                    {
+                        using (var outstream = new StreamWriter(this.DbPath))
+                        {
+                            var writer = new JsonTextWriter(outstream);
+                            var serializer = JsonSerializer.CreateDefault();
+                            serializer.Serialize(writer, _items);
+                            outstream.Close();
+                            completed = true;
+                        }
+                    }
+
                 }
                 catch (IOException)
                 {
